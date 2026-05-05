@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Studio Capilar</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ── SIDEBAR ─────────────────────────────── -->
+  <aside id="sidebar">
+    <div class="sidebar-logo">
+      <h2>Studio<br>Capilar</h2>
+      <p>Sistema de gestión</p>
+    </div>
+
+    <nav>
+      <div class="nav-item active" data-modulo="dashboard">
+        <span class="nav-ico">🏠</span> Dashboard
+      </div>
+      <div class="nav-item" data-modulo="turnos">
+        <span class="nav-ico">📅</span> Turnos
+      </div>
+      <div class="nav-item" data-modulo="pacientes">
+        <span class="nav-ico">👤</span> Pacientes
+      </div>
+        <div class="nav-item" data-modulo="ventas" onclick="Router.ir('ventas')">
+          <span class="nav-ico">🛒</span><span>Ventas</span>
+          <div class="badge-alertas" id="badge-alertas" style="display:none">0</div>
+        </div>
+        <div class="nav-item" data-modulo="inventario" onclick="Router.ir('inventario')">
+          <span class="nav-ico">📦</span><span>Inventario</span>
+        </div>
+        <div class="nav-item" data-modulo="balance" onclick="Router.ir('balance')">
+          <span class="nav-ico">📊</span><span>Balance</span>
+        </div>
+      <div class="nav-item" data-modulo="tratamientos">
+        <span class="nav-ico">💉</span> Tratamientos
+      </div>
+    </nav>
+
+    <div class="nav-bottom">
+      <div class="nav-item" data-modulo="configuracion">
+        <span class="nav-ico">⚙</span> Configuración
+      </div>
+    </div>
+
+    <div class="sidebar-footer">v2.0 · LocalStorage</div>
+  </aside>
+
+  <!-- ── MAIN ──────────────────────────────── -->
+  <main id="main-content"></main>
+
+</div>
+
+<!-- Orden de carga: base → lógica → módulos → init -->
+<script src="mock.js"></script>
+<script src="db.js"></script>
+<script src="utils.js"></script>
+<script src="google_calendar.js"></script>
+<script src="router.js"></script>
+<script src="modulos/dashboard.js"></script>
+<script src="modulos/turnos.js"></script>
+  <script src="modulos/pacientes.js"></script>
+  <script src="modulos/inventario.js"></script>
+  <script src="modulos/ventas.js"></script>
+<script src="modulos/balance.js"></script>
+<script src="modulos/tratamientos.js"></script>
+<script src="modulos/config.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    cargarMockSiEsNecesario();
+    DB.migrarCostos();
+    document.querySelectorAll(".nav-item").forEach(item => {
+      item.addEventListener("click", () => Router.ir(item.dataset.modulo));
+    });
+    Router.ir("dashboard");
+  });
+</script>
+</body>
+</html>
