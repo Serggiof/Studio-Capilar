@@ -48,6 +48,19 @@ const Utils = {
   normalizarTexto: (str) => {
     if (!str) return "";
     return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  },
+
+  mostrarToast: (mensaje) => {
+    let t = document.getElementById("toast-global");
+    if (!t) {
+      t = document.createElement("div");
+      t.id = "toast-global";
+      t.className = "toast";
+      document.body.appendChild(t);
+    }
+    t.textContent = mensaje;
+    t.classList.add("show");
+    setTimeout(() => { t.classList.remove("show"); }, 3000);
   }
 };
 

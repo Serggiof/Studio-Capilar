@@ -1659,7 +1659,7 @@ nav { flex: 1; }
 }
 
 .balance-monto {
-  font-size: 1.9rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--primary);
   line-height: 1.1;
@@ -1726,7 +1726,7 @@ nav { flex: 1; }
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 18px 20px;
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -1747,7 +1747,7 @@ nav { flex: 1; }
 }
 
 .kpi-valor {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: var(--primary);
   line-height: 1.1;
@@ -2006,4 +2006,124 @@ nav { flex: 1; }
 
 .tabla-excel tbody tr:hover td {
   background-color: var(--bg);
+}
+
+/* TABS EN MODAL */
+.tabs-header {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+}
+.tab-btn {
+  background: transparent;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  transition: all 0.2s;
+}
+.tab-btn:hover { background: var(--card-bg); color: var(--primary); }
+.tab-btn.active { background: var(--primary); color: #fff; }
+.tab-content { display: none; }
+.tab-content.active { display: block; animation: fadeIn 0.3s ease; min-height: 450px; }
+
+/* TIMELINE HISTORIAL MEDICO */
+.timeline {
+  border-left: 2px solid var(--primary-light);
+  margin-left: 10px;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.timeline-item { position: relative; }
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -27px;
+  top: 4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 2px solid #fff;
+}
+.timeline-date { font-size: 0.8rem; color: var(--text-muted); font-weight: bold; }
+.timeline-tratamiento { font-size: 1rem; color: var(--primary); font-weight: bold; margin: 4px 0; }
+.timeline-obs { font-size: 0.9rem; color: var(--text); background: var(--card-bg); padding: 10px; border-radius: var(--radius); border: 1px solid var(--border); margin-top: 5px; }
+.timeline-img-container { margin-top: 10px; }
+.timeline-img { max-width: 100%; max-height: 200px; border-radius: var(--radius); object-fit: cover; border: 1px solid var(--border); cursor: pointer; }
+
+/* INDICADOR PROGRESO SESIONES */
+.progreso-sesiones { display: flex; align-items: center; gap: 8px; margin: 15px 0; padding: 15px; background: var(--card-bg); border-radius: var(--radius); border: 1px solid var(--border); }
+.progreso-titulo { font-weight: bold; color: var(--primary); min-width: 100px; }
+.progreso-dots { display: flex; gap: 5px; }
+.dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--primary); }
+.dot.filled { background: var(--primary); }
+
+/* EXPORT BOTON */
+.btn-export { background: #1e3d59; color: #fff; border: none; padding: 8px 12px; border-radius: var(--radius); cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 5px;}
+.btn-export:hover { background: #142a3e; }
+
+/* TOAST NOTIFICATION */
+.toast {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background: var(--primary);
+  color: white;
+  padding: 12px 24px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  font-size: 0.9rem;
+  font-weight: 600;
+  z-index: 9999;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* TEXTAREA FANTASMA PARA AUTOCOMPLETE */
+.textarea-wrapper {
+  position: relative;
+  width: 100%;
+  margin-bottom: 12px;
+}
+.textarea-ghost {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding: 8px;
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: 13.3333px; /* Default browser textarea size */
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  color: transparent;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+.textarea-ghost span {
+  color: #a0a0a0;
+  background-color: rgba(0,0,0,0.05);
+  border-radius: 2px;
+}
+#hm-obs {
+  position: relative;
+  z-index: 2;
+  background: transparent;
+  margin-bottom: 0 !important;
 }
