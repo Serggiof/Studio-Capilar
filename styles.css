@@ -2127,3 +2127,77 @@ nav { flex: 1; }
   background: transparent;
   margin-bottom: 0 !important;
 }
+
+/* ─── HISTORICO MENSUAL ─────────────────────────────────────── */
+.historico-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow);
+  transition: all 0.2s;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.historico-card:hover {
+  border-color: var(--primary-light);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+.historico-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 250px;
+}
+.historico-mes {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: capitalize;
+}
+.historico-stats {
+  display: flex;
+  gap: 16px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+.historico-stats span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.historico-totales {
+  display: flex;
+  gap: 24px;
+  text-align: right;
+  flex-wrap: wrap;
+}
+.historico-totales div {
+  display: flex;
+  flex-direction: column;
+}
+.historico-totales label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.historico-totales strong {
+  font-size: 1.1rem;
+  color: var(--text);
+}
+.historico-totales .ganancia-neta {
+  color: #3B6D11;
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
