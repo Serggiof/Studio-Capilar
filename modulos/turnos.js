@@ -247,8 +247,9 @@ const Turnos = {
     }
 
     Turnos._state.fechaSel = fecha;
-    Modal.cerrar();
     Router.recargar();
+    // Mostrar modal de tarjeta para enviar por WhatsApp
+    setTimeout(() => TurnoCard.mostrarModal(nuevo), 120);
   },
 
   cancelar: (id) => {
