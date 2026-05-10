@@ -2,7 +2,7 @@
 // MAIN.JS — Proceso principal de Electron
 // ============================================================
 
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, shell } = require('electron');
 const path = require('path');
 const http = require('http');
 const fs = require('fs');
@@ -70,6 +70,22 @@ function createWindow() {
   });
 
   mainWindow.on('closed', () => mainWindow = null);
+
+  // Abrir links externos (ej. WhatsApp Web) en el navegador del sistema
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('http') && !url.startsWith(`http://localhost:${PORT}`)) {
+      shell.openExternal(url);
+      return { action: 'deny' };
+    }
+    return { action: 'allow' };
+  });
+
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (!url.startsWith(`http://localhost:${PORT}`)) {
+      event.preventDefault();
+      shell.openExternal(url);
+    }
+  });
 }
 
 app.whenReady().then(createWindow);

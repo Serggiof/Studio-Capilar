@@ -72,6 +72,13 @@ const Configuracion = {
             </select>
           </div>
 
+          <div class="config-field">
+            <label>Prefijo país WhatsApp (Ej: 549 para Arg)</label>
+            <input type="text" id="cfg-prefijo-wa"
+                   value="${cfg.prefijoWa || ""}"
+                   placeholder="Ej: 549">
+          </div>
+
           <button class="btn-primary" onclick="Configuracion.guardarInfo()">
             Guardar datos
           </button>
@@ -215,7 +222,8 @@ const Configuracion = {
   guardarInfo: () => {
     const nombreConsultorio = document.getElementById("cfg-nombre").value.trim();
     const moneda = document.getElementById("cfg-moneda").value;
-    DB.updateConfig({ nombreConsultorio, moneda });
+    const prefijoWa = document.getElementById("cfg-prefijo-wa").value.trim();
+    DB.updateConfig({ nombreConsultorio, moneda, prefijoWa });
     // Actualizar el logo del sidebar si cambió el nombre
     const logo = document.querySelector(".sidebar-logo h2");
     if (logo && nombreConsultorio) logo.textContent = nombreConsultorio;

@@ -113,20 +113,36 @@ const Ventas = {
         <div class="recompra-lista">
           ${ventasConInfo.length === 0
             ? '<p class="empty-state">Sin ventas registradas.</p>'
-            : ventasConInfo.map(v => `
-              <div class="recompra-item ${v.diasRecompra <= 0 ? "recompra-vencida" : v.diasRecompra <= 7 ? "recompra-proxima" : ""}">
-                <div class="recompra-main">
-                  <strong>${v.paciente?.nombre || "—"}</strong>
-                  <span>${v.producto?.nombre || "—"}</span>
-                </div>
-                <div class="recompra-meta">
-                  <span class="recompra-fecha">${Utils.formatFecha(v.proximaRecompra)}</span>
-                  <span class="recompra-dias ${v.diasRecompra <= 0 ? "dias-vencida" : v.diasRecompra <= 7 ? "dias-proxima" : ""}">
-                    ${v.diasRecompra <= 0 ? "Venció" : `En ${v.diasRecompra} días`}
-                  </span>
-                </div>
-                <button class="btn-sm" onclick="Ventas.eliminar('${v.id}')">✕</button>
-              </div>`).join("")}
+            : ventasConInfo.map(v => {
+                const prefijo = DB.getConfig().prefijoWa || '';
+                let tel = v.paciente?.telefono ? v.paciente.telefono.replace(/\D/g, '') : '';
+                if (tel && prefijo && !tel.startsWith(prefijo)) tel = prefijo + tel;
+                const msj = encodeURIComponent('Hola ' + (v.paciente?.nombre || '') + ', ¿cómo viene ese progreso? ¿Te está quedando poco producto?');
+                const waBtn = tel
+                  ? '<a href="https://wa.me/' + tel + '?text=' + msj + '" target="_blank" title="Enviar WhatsApp" '
+                    + 'style="text-decoration:none; display:flex; align-items:center; filter:grayscale(100%); transition:filter 0.2s;" '
+                    + 'onmouseover="this.style.filter=\'grayscale(0%)\'" onmouseout="this.style.filter=\'grayscale(100%)\'">'
+                    + '<img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" width="28" height="28">'
+                    + '</a>'
+                  : '';
+                const estado = v.diasRecompra <= 0 ? 'recompra-vencida' : v.diasRecompra <= 7 ? 'recompra-proxima' : '';
+                const diasClass = v.diasRecompra <= 0 ? 'dias-vencida' : v.diasRecompra <= 7 ? 'dias-proxima' : '';
+                const diasText = v.diasRecompra <= 0 ? 'Venció' : 'En ' + v.diasRecompra + ' días';
+                return '<div class="recompra-item ' + estado + '">'
+                  + '<div class="recompra-main">'
+                  + '<div style="display:flex; align-items:center; gap:8px;">'
+                  + '<strong>' + (v.paciente?.nombre || '—') + '</strong>'
+                  + waBtn
+                  + '</div>'
+                  + '<span>' + (v.producto?.nombre || '—') + '</span>'
+                  + '</div>'
+                  + '<div class="recompra-meta">'
+                  + '<span class="recompra-fecha">' + Utils.formatFecha(v.proximaRecompra) + '</span>'
+                  + '<span class="recompra-dias ' + diasClass + '">' + diasText + '</span>'
+                  + '</div>'
+                  + '<button class="btn-sm" onclick="Ventas.eliminar(\'' + v.id + '\')">✕</button>'
+                  + '</div>';
+              }).join('')}
         </div>
       </section>
     `;

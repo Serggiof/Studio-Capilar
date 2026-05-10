@@ -422,11 +422,19 @@ nav {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  flex: 1;
 }
 .recompra-main strong { font-size: 0.9rem; }
 .recompra-main span   { font-size: 0.8rem; color: var(--text-muted); }
 
-.recompra-meta { text-align: right; }
+.recompra-meta { 
+  text-align: right;
+  min-width: 100px;
+  margin-right: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
 .recompra-fecha { display: block; font-size: 0.8rem; color: var(--text-muted); }
 .recompra-dias  { font-size: 0.78rem; font-weight: 600; color: var(--primary); }
 .dias-proxima   { color: var(--warning); }

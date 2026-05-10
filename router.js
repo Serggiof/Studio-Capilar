@@ -22,6 +22,7 @@ const Router = {
       pacientes: () => Pacientes.render(main),
       inventario:() => Inventario.render(main),
       ventas:       () => Ventas.render(main),
+      alertas:      () => Alertas.render(main),
       balance:      () => Balance.render(main),
       tratamientos: () => Tratamientos.render(main),
       configuracion:() => Configuracion.render(main)

@@ -27,7 +27,7 @@ const Dashboard = {
             <span class="stat-num">${DB.pacientes().length}</span>
             <span class="stat-label">Pacientes</span>
           </div>
-          <div class="stat-card ${alertasRecompra.length + alertasPlasma.length > 0 ? "stat-alerta" : ""}">
+          <div class="stat-card ${alertasRecompra.length + alertasPlasma.length > 0 ? "stat-alerta" : ""}" onclick="Router.ir('alertas')" style="cursor: pointer;">
             <span class="stat-num">${alertasRecompra.length + alertasPlasma.length}</span>
             <span class="stat-label">Alertas</span>
           </div>
