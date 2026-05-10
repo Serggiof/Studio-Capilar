@@ -867,7 +867,8 @@ nav {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  padding-top: 15%;
   border-radius: 6px;
   font-size: 0.82rem;
   position: relative;
@@ -926,6 +927,16 @@ nav {
   padding: 0 4px;
   line-height: 1.4;
   font-weight: 700;
+}
+
+.cal-badges {
+  position: absolute;
+  bottom: 12%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 100%;
 }
 
 .cal-hoy .cal-dot { background: rgba(255,255,255,0.3); }

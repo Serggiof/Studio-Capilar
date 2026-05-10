@@ -98,15 +98,14 @@ const Configuracion = {
           </div>
 
           <div class="config-field">
-            <label>Día del consultorio especial</label>
-            <select id="cfg-dia-alt" style="max-width:200px">
-              <option value="1" ${cfg.diaAlternativo == 1 ? "selected" : ""}>Lunes</option>
-              <option value="2" ${cfg.diaAlternativo == 2 ? "selected" : ""}>Martes</option>
-              <option value="3" ${cfg.diaAlternativo == 3 ? "selected" : ""}>Miércoles</option>
-              <option value="4" ${cfg.diaAlternativo == 4 ? "selected" : ""}>Jueves</option>
-              <option value="5" ${cfg.diaAlternativo == 5 ? "selected" : ""}>Viernes</option>
-              <option value="6" ${cfg.diaAlternativo == 6 ? "selected" : ""}>Sábado</option>
-            </select>
+            <label>Días del consultorio especial</label>
+            <div id="cfg-dias-alt" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px;">
+              ${[1,2,3,4,5,6].map(d => {
+                const checked = (cfg.diasAlternativos || [parseInt(cfg.diaAlternativo) || 3]).includes(d) ? "checked" : "";
+                const nombre = ["","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"][d];
+                return `<label style="display:flex; align-items:center; gap:4px; text-transform:none; font-weight:normal; letter-spacing:normal;"><input type="checkbox" value="${d}" ${checked}> ${nombre}</label>`;
+              }).join("")}
+            </div>
           </div>
 
           <button class="btn-primary" onclick="Configuracion.guardarHorarios()">
@@ -193,7 +192,7 @@ const Configuracion = {
 
   guardarHorarios: () => {
     const duracionTurno  = parseInt(document.getElementById("cfg-duracion").value) || 60;
-    const diaAlternativo = parseInt(document.getElementById("cfg-dia-alt").value) || 3;
+    const diasAlternativos = Array.from(document.querySelectorAll('#cfg-dias-alt input:checked')).map(el => parseInt(el.value));
 
     const horariosPorDia = {};
     [0, 1, 2, 3, 4, 5, 6].forEach(d => {
@@ -208,7 +207,7 @@ const Configuracion = {
       };
     });
 
-    DB.updateConfig({ duracionTurno, diaAlternativo, horariosPorDia });
+    DB.updateConfig({ duracionTurno, diasAlternativos, horariosPorDia });
     Configuracion._mostrarOk("cfg-horarios-ok");
     // No recargamos el módulo para que el usuario siga viendo la confirmación
   },

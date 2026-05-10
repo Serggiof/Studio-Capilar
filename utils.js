@@ -84,11 +84,12 @@ const CONFIG = {
   },
   get duracionTurno() { return parseInt(DB.getConfig().duracionTurno) || 60; },
   get localidades() {
-    const d = parseInt(DB.getConfig().diaAlternativo) || 3;
+    const d = DB.getConfig().diasAlternativos || [parseInt(DB.getConfig().diaAlternativo) || 3];
     const dias = { 1:"Lunes", 2:"Martes", 3:"Miércoles", 4:"Jueves", 5:"Viernes", 6:"Sábado", 0:"Domingo" };
+    const nombres = d.map(x => dias[x]).join(", ");
     return {
       principal: "Consultorio principal",
-      alternativo: `Consultorio especial (${dias[d]})`
+      alternativo: `Consultorio especial (${nombres})`
     };
   }
 };
@@ -128,7 +129,10 @@ const Calendario = {
     return slots;
   },
 
-  esConsultorioAlt: (fechaISO) => Utils.diaSemana(fechaISO) === (parseInt(DB.getConfig().diaAlternativo) || 3),
+  esConsultorioAlt: (fechaISO) => {
+    const d = DB.getConfig().diasAlternativos || [parseInt(DB.getConfig().diaAlternativo) || 3];
+    return d.includes(Utils.diaSemana(fechaISO));
+  },
 
   diasDelMes: (year, month) => {
     const dias = [];

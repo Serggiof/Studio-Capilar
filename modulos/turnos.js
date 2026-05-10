@@ -70,7 +70,7 @@ const Turnos = {
       const fecha = `${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
       const dia   = Utils.diaSemana(fecha);
       const esLaboral = !!CONFIG.horarios[dia];
-      const esMierc   = dia === 3;
+      const esAlt     = Calendario.esConsultorioAlt(fecha);
       const esHoy     = fecha === hoy;
       const esSel     = fecha === fechaSel;
       const cantidad  = diasConTurnos[fecha] || 0;
@@ -81,8 +81,10 @@ const Turnos = {
           ${esSel  ? "cal-sel"  : ""}"
           ${esLaboral ? `onclick="Turnos.selFecha('${fecha}')"` : ""}>
         <span>${d}</span>
-        ${esMierc   ? `<span class="cal-alt-dot" title="Cons. alternativo">★</span>` : ""}
-        ${cantidad > 0 ? `<span class="cal-dot">${cantidad}</span>` : ""}
+        <div class="cal-badges">
+          ${esAlt     ? `<span class="cal-alt-dot" title="Cons. alternativo">★</span>` : ""}
+          ${cantidad > 0 ? `<span class="cal-dot">${cantidad}</span>` : ""}
+        </div>
       </div>`;
     }).join("");
   },
