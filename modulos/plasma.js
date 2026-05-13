@@ -82,14 +82,14 @@ const Plasma = {
         <input type="number" id="pp-dias" value="21" min="1">
       </div>
       <button class="btn-primary" onclick="Plasma.guardarPlan()">Crear plan</button>
-    `));
+    `, { bloquearFondo: true }));
   },
 
   guardarPlan: () => {
     const pacienteId = document.getElementById("pp-paciente").value;
     const total      = parseInt(document.getElementById("pp-total").value);
     const dias       = parseInt(document.getElementById("pp-dias").value);
-    if (!pacienteId) return alert("Seleccioná un paciente.");
+    if (!pacienteId) return Utils.mostrarToast("Seleccioná un paciente.");
 
     const alerta = new Date();
     alerta.setDate(alerta.getDate() + dias);
@@ -113,7 +113,7 @@ const Plasma = {
     const plan  = lista.find(s => s.id === planId);
     if (!plan) return;
     if (plan.sesiones.length >= plan.totalPlanificadas)
-      return alert("Ya se completaron todas las sesiones planificadas.");
+      return Utils.mostrarToast("Ya se completaron todas las sesiones planificadas.");
 
     const alerta = new Date();
     alerta.setDate(alerta.getDate() + 21);

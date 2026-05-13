@@ -275,7 +275,7 @@ const Ventas = {
     const cantidad   = parseInt(document.getElementById("nv-cantidad").value);
     const dias       = parseInt(document.getElementById("nv-recompra").value);
 
-    if (!pacienteId || !productoId) return alert("Completá paciente y producto.");
+    if (!pacienteId || !productoId) return Utils.mostrarToast("Completá paciente y producto.");
 
     const producto = DB.getProducto(productoId);
     const recompra = new Date();

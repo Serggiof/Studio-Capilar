@@ -118,7 +118,7 @@ const Inventario = {
 
   agregarProducto: () => {
     const nombre = document.getElementById("ap-nombre").value.trim();
-    if (!nombre) return alert("El nombre es obligatorio.");
+    if (!nombre) return Utils.mostrarToast("El nombre es obligatorio.");
 
     const nuevo = {
       id:        Utils.id("prod"),

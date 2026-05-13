@@ -216,14 +216,14 @@ const Turnos = {
         <textarea id="nt-notas" placeholder="Motivo, indicaciones..."></textarea>
       </div>
       <button class="btn-primary" onclick="Turnos.guardar('${fecha}')">Agendar turno</button>
-    `));
+    `, { bloquearFondo: true }));
   },
 
   guardar: (fecha) => {
     const pacienteId = document.getElementById("nt-paciente").value;
     const hora       = document.getElementById("nt-hora").value;
-    if (!pacienteId) return alert("Seleccioná un paciente.");
-    if (!hora)       return alert("Seleccioná un horario.");
+    if (!pacienteId) return Utils.mostrarToast("Seleccioná un paciente.");
+    if (!hora)       return Utils.mostrarToast("Seleccioná un horario.");
 
     const nuevo = {
       id: Utils.id("t"),

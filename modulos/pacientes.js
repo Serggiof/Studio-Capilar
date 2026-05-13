@@ -255,7 +255,7 @@ const Pacientes = {
     const obs = document.getElementById("hm-obs").value.trim();
     const fotoInput = document.getElementById("hm-foto");
     
-    if (!fecha || !tratamiento) return alert("Fecha y Tratamiento son obligatorios.");
+    if (!fecha || !tratamiento) return Utils.mostrarToast("Fecha y Tratamiento son obligatorios.");
 
     let fotoPath = null;
     if (fotoInput.files && fotoInput.files.length > 0) {
@@ -292,7 +292,7 @@ const Pacientes = {
     if (!p) return;
     
     if (typeof docx === "undefined") {
-      return alert("La librería para exportar Word no está cargada o no hay conexión a internet para descargarla.");
+      return Utils.mostrarToast("La librería para exportar Word no está cargada o no hay conexión a internet para descargarla.");
     }
     
     try {
@@ -367,7 +367,7 @@ const Pacientes = {
       Utils.mostrarToast("Paciente exportado correctamente");
     } catch (err) {
       console.error(err);
-      alert("Hubo un error al generar el archivo Word.");
+      Utils.mostrarToast("Hubo un error al generar el archivo Word.");
     }
   },
 
@@ -392,7 +392,7 @@ const Pacientes = {
 
   guardar: () => {
     const nombre = document.getElementById("np-nombre").value.trim();
-    if (!nombre) return alert("El nombre es obligatorio.");
+    if (!nombre) return Utils.mostrarToast("El nombre es obligatorio.");
 
     const nuevo = {
       id: Utils.id("p"),
