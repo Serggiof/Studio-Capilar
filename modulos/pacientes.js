@@ -6,8 +6,16 @@ const Pacientes = {
   render: (el) => {
     el.innerHTML = `
       <div class="modulo-header">
-        <h1>Pacientes</h1>
-        <button class="btn-primary" onclick="Pacientes.abrirNuevo()">+ Nuevo paciente</button>
+        <h1>Pacientes (Total: ${DB.pacientes().length})</h1>
+        <div style="display: flex; gap: 10px; align-items:center;">
+          <select id="filtro-inactivos" onchange="Pacientes.filtrarInactivos(this.value)" style="padding:6px; border-radius:4px; border:1px solid var(--border); font-family:inherit; cursor:pointer;">
+            <option value="">Todos los pacientes</option>
+            <option value="20">⚠️ Inactivos (+20 días)</option>
+            <option value="30">⚠️ Inactivos (+30 días)</option>
+            <option value="40">⚠️ Inactivos (+40 días)</option>
+          </select>
+          <button class="btn-primary" onclick="Pacientes.abrirNuevo()">+ Nuevo paciente</button>
+        </div>
       </div>
       <div class="search-bar">
         <input type="text" placeholder="Buscar por nombre..."
@@ -67,6 +75,42 @@ const Pacientes = {
       Utils.normalizarTexto(p.condicion || "").includes(q)
     );
     document.getElementById("pacientes-grid").innerHTML = Pacientes._lista(filtrados);
+    const countHeader = document.querySelector(".modulo-header h1");
+    if (countHeader) countHeader.innerHTML = `Pacientes (${filtrados.length})`;
+  },
+
+  filtrarInactivos: (diasStr) => {
+    const todos = DB.pacientes();
+    if (!diasStr) {
+      document.getElementById("pacientes-grid").innerHTML = Pacientes._lista(todos);
+      const countHeader = document.querySelector(".modulo-header h1");
+      if (countHeader) countHeader.innerHTML = `Pacientes (Total: ${todos.length})`;
+      return;
+    }
+    
+    const dias = parseInt(diasStr);
+    const hoy = new Date();
+    const filtrados = todos.filter(p => {
+      let lastDate = p.creadoEn ? new Date(p.creadoEn + "T12:00:00") : new Date("2020-01-01T12:00:00");
+      
+      DB.turnos().filter(t => t.pacienteId === p.id).forEach(t => { const d = new Date(t.fecha + "T12:00:00"); if (d > lastDate) lastDate = d; });
+      DB.ventas().filter(v => v.pacienteId === p.id).forEach(v => { const d = new Date(v.fecha + "T12:00:00"); if (d > lastDate) lastDate = d; });
+      if (p.historial) {
+        p.historial.forEach(h => { const d = new Date(h.fecha + "T12:00:00"); if (d > lastDate) lastDate = d; });
+      }
+      
+      return ((hoy - lastDate) / (1000 * 60 * 60 * 24)) > dias;
+    });
+    
+    document.getElementById("pacientes-grid").innerHTML = Pacientes._lista(filtrados);
+    const countHeader = document.querySelector(".modulo-header h1");
+    if (countHeader) countHeader.innerHTML = `Inactivos > ${dias} días (${filtrados.length})`;
+  },
+
+  irAVender: (id) => {
+    Modal.cerrar();
+    Router.ir('ventas');
+    setTimeout(() => Ventas.abrirNuevaVenta(id), 100);
   },
 
   verDetalle: (id) => {
@@ -118,7 +162,10 @@ const Pacientes = {
             <p class="modal-condicion" style="margin:0">${p.condicion || "Sin condición registrada"}</p>
           </div>
         </div>
-        <button id="btn-export-word" class="btn-export" onclick="Pacientes.exportarHistorialWord('${id}')">📄 Exportar Word</button>
+        <div style="display: flex; gap: 8px;">
+          <button id="btn-export-word" class="btn-export" onclick="Pacientes.exportarHistorialWord('${id}')">📄 Exportar Word</button>
+          <button class="btn-primary" style="padding: 8px 12px; font-size: 0.85rem;" onclick="Pacientes.irAVender('${id}')">🛒 Vender</button>
+        </div>
       </div>
 
       <div class="tabs-header" style="margin-top: 25px;">
@@ -135,6 +182,7 @@ const Pacientes = {
           <div><label>Email</label><span>${p.email || '-'}</span></div>
           <div><label>Nacimiento</label><span>${p.fechaNacimiento ? Utils.formatFecha(p.fechaNacimiento) : '-'}</span></div>
           <div><label>Paciente desde</label><span>${Utils.formatFecha(p.creadoEn)}</span></div>
+          ${p.origen ? `<div><label>Origen</label><span>${p.origen}</span></div>` : ""}
         </div>
         ${p.notas ? `<div class="modal-notas"><label>Notas</label><p>${p.notas}</p></div>` : ""}
         
@@ -384,6 +432,15 @@ const Pacientes = {
         <input type="text" id="np-condicion" placeholder="Ej: Alopecia, seborrea..."></div>
       <div class="form-group"><label>Fecha de nacimiento</label>
         <input type="date" id="np-nacimiento"></div>
+      <div class="form-group"><label>¿Cómo nos conoció?</label>
+        <select id="np-origen" onchange="document.getElementById('np-origen-detalle').style.display = this.value === 'Paciente' ? 'block' : 'none'">
+          <option value="">Seleccionar...</option>
+          <option value="Instagram (IG)">Instagram (IG)</option>
+          <option value="Paciente">Por otro paciente</option>
+          <option value="Otro">Otro</option>
+        </select>
+        <input type="text" id="np-origen-detalle" placeholder="Nombre del paciente..." style="display:none; margin-top:8px;">
+      </div>
       <div class="form-group"><label>Notas</label>
         <textarea id="np-notas" placeholder="Alergias, observaciones..."></textarea></div>
       <button class="btn-primary" onclick="Pacientes.guardar()">Guardar paciente</button>
@@ -394,6 +451,10 @@ const Pacientes = {
     const nombre = document.getElementById("np-nombre").value.trim();
     if (!nombre) return Utils.mostrarToast("El nombre es obligatorio.");
 
+    const origenVal = document.getElementById("np-origen").value;
+    const origenDetalle = document.getElementById("np-origen-detalle").value.trim();
+    const origen = origenVal === 'Paciente' ? (origenDetalle ? `Paciente: ${origenDetalle}` : 'Paciente') : origenVal;
+
     const nuevo = {
       id: Utils.id("p"),
       nombre,
@@ -401,6 +462,7 @@ const Pacientes = {
       email:    document.getElementById("np-email").value,
       condicion: document.getElementById("np-condicion").value,
       fechaNacimiento: document.getElementById("np-nacimiento").value,
+      origen:   origen,
       notas:    document.getElementById("np-notas").value,
       creadoEn: Utils.hoy()
     };

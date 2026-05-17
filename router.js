@@ -36,9 +36,9 @@ const Router = {
 
   actualizarBadge: () => {
     let count = 0;
-    DB.ventas().forEach(v => { if (Utils.esAlerta(v.proximaRecompra, 7)) count++; });
-    DB.sesionesPlasma().forEach(s => { if (Utils.esAlerta(s.proximaAlerta, 5)) count++; });
-    DB.sesionesMeso().forEach(s => { if (Utils.esAlerta(s.proximaAlerta, 5)) count++; });
+    DB.ventas().forEach(v => { if (!v.contactado && Utils.esAlerta(v.proximaRecompra, 7)) count++; });
+    DB.sesionesPlasma().forEach(s => { if (!s.contactado && Utils.esAlerta(s.proximaAlerta, 5)) count++; });
+    DB.sesionesMeso().forEach(s => { if (!s.contactado && Utils.esAlerta(s.proximaAlerta, 5)) count++; });
     const badge = document.getElementById("badge-alertas");
     if (badge) { badge.textContent = count; badge.style.display = count > 0 ? "flex" : "none"; }
   }

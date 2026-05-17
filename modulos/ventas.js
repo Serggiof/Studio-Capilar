@@ -213,7 +213,7 @@ const Ventas = {
     if (facEl)   facEl.textContent   = `Facturado: $${totalFac.toLocaleString("es-AR")}`;
   },
 
-  abrirNuevaVenta: () => {
+  abrirNuevaVenta: (pacienteIdPresel = "") => {
     const pacientes = DB.pacientes();
     const productos = DB.productos();
 
@@ -223,7 +223,7 @@ const Ventas = {
         <label>Paciente *</label>
         <select id="nv-paciente">
           <option value="">Seleccionar...</option>
-          ${pacientes.map(p => `<option value="${p.id}">${p.nombre}</option>`).join("")}
+          ${pacientes.map(p => `<option value="${p.id}" ${p.id === pacienteIdPresel ? 'selected' : ''}>${p.nombre}</option>`).join("")}
         </select>
       </div>
       <div class="form-group">

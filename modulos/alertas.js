@@ -3,6 +3,28 @@
 // ============================================================
 
 const Alertas = {
+  diasFiltro: 7,
+
+  cambiarFiltro: (dias) => {
+    Alertas.diasFiltro = dias;
+    Router.recargar();
+  },
+
+  marcarContactado: (tipo, id) => {
+    if (tipo === 'recompra') {
+      const v = DB.ventas().find(x => x.id === id);
+      if (v) { v.contactado = true; DB.actualizar("ventas", id, { contactado: true }); }
+    } else if (tipo === 'plasma') {
+      const p = DB.sesionesPlasma().find(x => x.id === id);
+      if (p) { p.contactado = true; DB.actualizar("sesionesPlasma", id, { contactado: true }); }
+    } else if (tipo === 'meso') {
+      const m = DB.sesionesMeso().find(x => x.id === id);
+      if (m) { m.contactado = true; DB.actualizar("sesionesMeso", id, { contactado: true }); }
+    }
+    Router.recargar();
+    Router.actualizarBadge();
+  },
+
   _waLink: (paciente) => {
     if (!paciente?.telefono) return '';
     const prefijo = DB.getConfig().prefijoWa || '';
@@ -18,7 +40,7 @@ const Alertas = {
   },
 
   render: (el) => {
-    const alertasRecompra = DB.ventas().filter(v => Utils.esAlerta(v.proximaRecompra, 7)).map(v => ({
+    const alertasRecompra = DB.ventas().filter(v => Utils.esAlerta(v.proximaRecompra, Alertas.diasFiltro)).map(v => ({
       ...v,
       paciente: DB.getPaciente(v.pacienteId),
       producto: DB.getProducto(v.productoId),
@@ -26,14 +48,21 @@ const Alertas = {
       tipo: 'recompra'
     }));
 
-    const alertasPlasma = DB.sesionesPlasma().filter(s => Utils.esAlerta(s.proximaAlerta, 5)).map(s => ({
+    const alertasPlasma = DB.sesionesPlasma().filter(s => Utils.esAlerta(s.proximaAlerta, Alertas.diasFiltro)).map(s => ({
       ...s,
       paciente: DB.getPaciente(s.pacienteId),
       dias: Utils.diasHasta(s.proximaAlerta),
       tipo: 'plasma'
     }));
 
-    const todas = [...alertasRecompra, ...alertasPlasma].sort((a, b) => a.dias - b.dias);
+    const alertasMeso = DB.sesionesMeso().filter(s => Utils.esAlerta(s.proximaAlerta, Alertas.diasFiltro)).map(s => ({
+      ...s,
+      paciente: DB.getPaciente(s.pacienteId),
+      dias: Utils.diasHasta(s.proximaAlerta),
+      tipo: 'meso'
+    }));
+
+    const todas = [...alertasRecompra, ...alertasPlasma, ...alertasMeso].sort((a, b) => a.dias - b.dias);
 
     const filas = todas.length === 0
       ? '<p class="empty-state">No hay alertas pendientes \u2705</p>'
@@ -43,14 +72,20 @@ const Alertas = {
           const diasText = a.dias <= 0 ? 'Venci\u00f3' : 'En ' + a.dias + ' d\u00edas';
           const diasClass = a.dias <= 0 ? 'dias-vencida' : 'dias-proxima';
           const fecha = Utils.formatFecha(esRecompra ? a.proximaRecompra : a.proximaAlerta);
-          const detalle = esRecompra ? ('Recompra: ' + (a.producto?.nombre || '\u2014')) : 'Pr\u00f3xima sesi\u00f3n de plasma';
+          const detalle = esRecompra ? ('Recompra: ' + (a.producto?.nombre || '\u2014')) : (a.tipo === 'plasma' ? 'Pr\u00f3xima sesi\u00f3n de plasma' : 'Pr\u00f3xima sesi\u00f3n de mesoterapia');
           const waBtn = Alertas._waLink(a.paciente);
+          const contactBtn = a.contactado 
+            ? '<span style="margin-left: 10px; font-size: 0.85rem; color: var(--primary);">\u2714\ufe0f Le\u00eddo</span>'
+            : '<button class="btn-sm" style="margin-left: 10px;" onclick="Alertas.marcarContactado(\'' + a.tipo + '\', \'' + a.id + '\')" title="Marcar como le\u00eddo">\u2714\ufe0f</button>';
 
-          return '<div class="recompra-item ' + estado + '">'
+          const opacityStyle = a.contactado ? 'opacity: 0.6; filter: grayscale(100%); background-color: var(--bg);' : '';
+
+          return '<div class="recompra-item ' + estado + '" style="' + opacityStyle + '">'
             + '<div class="recompra-main">'
             + '<div style="display:flex; align-items:center; gap:8px;">'
             + '<strong>' + (a.paciente?.nombre || '\u2014') + '</strong>'
             + waBtn
+            + contactBtn
             + '</div>'
             + '<span>' + detalle + '</span>'
             + '</div>'
@@ -62,6 +97,11 @@ const Alertas = {
         }).join('');
 
     el.innerHTML = '<div class="modulo-header"><h1>\ud83d\udd14 Alertas y Vencimientos</h1></div>'
+      + '<div class="tabs" style="margin-bottom: 20px;">'
+      + '<button class="tab-btn ' + (Alertas.diasFiltro === 7 ? 'active' : '') + '" onclick="Alertas.cambiarFiltro(7)">Pr\u00f3ximos 7 d\u00edas</button>'
+      + '<button class="tab-btn ' + (Alertas.diasFiltro === 15 ? 'active' : '') + '" onclick="Alertas.cambiarFiltro(15)">Pr\u00f3ximos 15 d\u00edas</button>'
+      + '<button class="tab-btn ' + (Alertas.diasFiltro === 21 ? 'active' : '') + '" onclick="Alertas.cambiarFiltro(21)">Pr\u00f3ximos 21 d\u00edas</button>'
+      + '</div>'
       + '<section class="card">'
       + '<h2>Pr\u00f3ximos vencimientos (' + todas.length + ')</h2>'
       + '<div class="recompra-lista">' + filas + '</div>'
