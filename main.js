@@ -73,6 +73,21 @@ function createWindow() {
 
   // Abrir links externos (ej. WhatsApp Web) en el navegador del sistema
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    // Permitir que la ventana de inicio de sesión de Google se abra dentro de Electron
+    if (url.startsWith('https://accounts.google.com/')) {
+      return {
+        action: 'allow',
+        overrideBrowserWindowOptions: {
+          webPreferences: {
+            // Usamos un User Agent de Chrome limpio para que Google no bloquee la conexión desde Electron
+            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            nodeIntegration: false,
+            contextIsolation: true,
+          }
+        }
+      };
+    }
+
     if (url.startsWith('http') && !url.startsWith(`http://localhost:${PORT}`)) {
       shell.openExternal(url);
       return { action: 'deny' };
@@ -81,6 +96,10 @@ function createWindow() {
   });
 
   mainWindow.webContents.on('will-navigate', (event, url) => {
+    // Permitir redirecciones de Google dentro del flujo
+    if (url.startsWith('https://accounts.google.com/')) {
+      return;
+    }
     if (!url.startsWith(`http://localhost:${PORT}`)) {
       event.preventDefault();
       shell.openExternal(url);

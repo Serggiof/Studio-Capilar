@@ -2,7 +2,7 @@
 // GOOGLE CALENDAR API (Integración)
 // ============================================================
 
-const CLIENT_ID = '799899410568-ibk824ktj1r8983gnvp3aklg022s64r1.apps.googleusercontent.com';
+const CLIENT_ID = '540346615897-a3nqgmi63mosj4iu10m29jj2lnqstu3n.apps.googleusercontent.com';
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest';
 const SCOPES = 'https://www.googleapis.com/auth/calendar.events';
 
@@ -101,7 +101,7 @@ const GoogleCalendar = {
     gapi.client.setToken({access_token: GoogleCalendar.accessToken});
 
     const paciente = DB.getPaciente(turno.pacienteId);
-    const resumen = `Turno: ${paciente ? paciente.nombre : 'Paciente'} - ${turno.tratamiento}`;
+    const resumen = `Turno: ${paciente ? paciente.nombre : 'Paciente'} - ${turno.tipo}`;
     
     // Formato fecha: "YYYY-MM-DD" + "T" + "HH:mm:00"
     const startDateTime = `${turno.fecha}T${turno.hora}:00`;
@@ -119,7 +119,7 @@ const GoogleCalendar = {
 
     const event = {
       'summary': resumen,
-      'description': `Turno generado desde Capilar Studio.\nPaciente: ${paciente ? paciente.nombre : '-'}\nMotivo: ${turno.tratamiento}`,
+      'description': `Turno generado desde Capilar Studio.\nPaciente: ${paciente ? paciente.nombre : '-'}\nMotivo: ${turno.tipo}`,
       'start': {
         'dateTime': startDateTime,
         'timeZone': Intl.DateTimeFormat().resolvedOptions().timeZone
