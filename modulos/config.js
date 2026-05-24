@@ -129,7 +129,11 @@ const Configuracion = {
           <p class="config-desc">Los turnos que crees o modifiques se reflejarán automáticamente en tu celular.</p>
           <div style="margin-top: 15px;">
             ${GoogleCalendar.estaConectado() 
-              ? '<p style="color: var(--success); font-weight: 500; margin-bottom: 12px;">✅ Conectado a Google Calendar</p><button class="btn-outline" onclick="GoogleCalendar.desconectar()">Desconectar</button>'
+              ? `<p style="color: #2e7d32; font-weight: 500; margin-bottom: 12px;">✅ Conectado a Google Calendar</p>
+                 <p style="font-size: 0.88rem; margin-top: -6px; margin-bottom: 16px; color: var(--text-muted);">
+                   <strong>Cuenta:</strong> ${localStorage.getItem('gcal_email') || 'Obteniendo correo...'}
+                 </p>
+                 <button class="btn-outline" onclick="GoogleCalendar.desconectar()">Desconectar</button>`
               : '<p style="color: var(--text-muted); margin-bottom: 12px;">No estás conectado.</p><button class="btn-primary" onclick="GoogleCalendar.conectar()">Conectar con Google</button>'
             }
           </div>

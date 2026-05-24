@@ -47,8 +47,26 @@ const GoogleCalendar = {
         }
         GoogleCalendar.accessToken = tokenResponse.access_token;
         localStorage.setItem('gcal_token', GoogleCalendar.accessToken);
-        alert('¡Google Calendar conectado exitosamente!');
-        Router.recargar();
+
+        // Obtener el correo electrónico del usuario conectado
+        fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: {
+            'Authorization': `Bearer ${GoogleCalendar.accessToken}`
+          }
+        })
+        .then(res => res.json())
+        .then(userInfo => {
+          if (userInfo.email) {
+            localStorage.setItem('gcal_email', userInfo.email);
+          }
+          alert('¡Google Calendar conectado exitosamente!');
+          Router.recargar();
+        })
+        .catch(err => {
+          console.error('Error al obtener el correo del usuario:', err);
+          alert('¡Google Calendar conectado exitosamente!');
+          Router.recargar();
+        });
       },
     });
     GoogleCalendar.gisInited = true;
@@ -58,7 +76,26 @@ const GoogleCalendar = {
     const savedToken = localStorage.getItem('gcal_token');
     if (savedToken) {
       GoogleCalendar.accessToken = savedToken;
-      // Idealmente habría que validar si expiró, pero lo forzamos al enviar req
+      
+      // Si el token existe pero no tenemos el correo guardado, lo recuperamos en segundo plano
+      if (!localStorage.getItem('gcal_email')) {
+        fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: {
+            'Authorization': `Bearer ${savedToken}`
+          }
+        })
+        .then(res => res.json())
+        .then(userInfo => {
+          if (userInfo.email) {
+            localStorage.setItem('gcal_email', userInfo.email);
+            // Si estamos en la pestaña de configuración, recargamos la vista para mostrarlo
+            if (typeof Router !== 'undefined' && Router.moduloActual === 'configuracion') {
+              Router.recargar();
+            }
+          }
+        })
+        .catch(err => console.error('Error al recuperar información del usuario:', err));
+      }
     }
   },
 
@@ -87,6 +124,7 @@ const GoogleCalendar = {
       google.accounts.oauth2.revoke(GoogleCalendar.accessToken, () => {
         GoogleCalendar.accessToken = null;
         localStorage.removeItem('gcal_token');
+        localStorage.removeItem('gcal_email');
         gapi.client.setToken('');
         alert('Google Calendar desconectado.');
         Router.recargar();

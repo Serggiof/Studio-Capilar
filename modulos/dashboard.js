@@ -23,6 +23,10 @@ const Dashboard = {
             <span class="stat-num">${turnosHoy.length}</span>
             <span class="stat-label">Turnos hoy</span>
           </div>
+          <div class="stat-card stat-action" onclick="Router.ir('pacientes'); setTimeout(() => Pacientes.abrirNuevo(), 150);" style="cursor: pointer; border: 1px dashed var(--accent); background: rgba(201, 169, 110, 0.05); display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 100px; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.03)'; this.style.boxShadow='var(--shadow-md)';" onmouseout="this.style.transform='none'; this.style.boxShadow='var(--shadow)';">
+            <span class="stat-num" style="color: var(--accent); font-size: 1.4rem; line-height: 1.2;">👤+</span>
+            <span class="stat-label" style="color: var(--accent); font-weight: 600;">Nuevo cliente</span>
+          </div>
           <div class="stat-card">
             <span class="stat-num">${DB.pacientes().length}</span>
             <span class="stat-label">Pacientes</span>
