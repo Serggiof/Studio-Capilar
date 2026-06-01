@@ -83,6 +83,7 @@
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     cargarMockSiEsNecesario();
+    DB.inicializarPlanesDesdeHistorial();
     DB.migrarCostos();
     document.querySelectorAll(".nav-item").forEach(item => {
       item.addEventListener("click", () => Router.ir(item.dataset.modulo));

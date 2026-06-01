@@ -3,24 +3,37 @@
 // ============================================================
 
 const Pacientes = {
+  ordenActual: localStorage.getItem('pacientes_orden') || 'apellido',
+  filtroActual: "todos",
+
   render: (el) => {
+    Pacientes.filtroActual = "todos";
+
     el.innerHTML = `
       <div class="modulo-header">
         <h1>Pacientes (Total: ${DB.pacientes().length})</h1>
         <div style="display: flex; gap: 10px; align-items:center;">
-          <select id="filtro-inactivos" onchange="Pacientes.filtrarInactivos(this.value)" style="padding:6px; border-radius:4px; border:1px solid var(--border); font-family:inherit; cursor:pointer;">
-            <option value="">Todos los pacientes</option>
-            <option value="20">⚠️ Inactivos (+20 días)</option>
-            <option value="30">⚠️ Inactivos (+30 días)</option>
-            <option value="40">⚠️ Inactivos (+40 días)</option>
+          <select id="orden-pacientes" onchange="Pacientes.cambiarOrden(this.value)" style="padding:6px; border-radius:4px; border:1px solid var(--border); font-family:inherit; cursor:pointer;">
+            <option value="apellido" ${Pacientes.ordenActual === "apellido" ? "selected" : ""}>Ordenar por Apellido</option>
+            <option value="nombre" ${Pacientes.ordenActual === "nombre" ? "selected" : ""}>Ordenar por Nombre</option>
           </select>
           <button class="btn-primary" onclick="Pacientes.abrirNuevo()">+ Nuevo paciente</button>
         </div>
       </div>
+      
+      <!-- Solapas de Inactividad por Año - ¡Siempre Visibles e Intuitivas! -->
+      <div class="tabs-header" style="margin-top: 15px; margin-bottom: 15px; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+        <button class="tab-btn active" style="font-size:0.9rem; padding: 6px 12px;" onclick="Pacientes.seleccionarTabFiltro('todos', this)">👤 Todos los pacientes</button>
+        <button class="tab-btn" style="font-size:0.9rem; padding: 6px 12px;" onclick="Pacientes.seleccionarTabFiltro('2026', this)">⚠️ Inactivos 2026 (+30 días)</button>
+        <button class="tab-btn" style="font-size:0.9rem; padding: 6px 12px;" onclick="Pacientes.seleccionarTabFiltro('2025', this)">⚠️ Inactivos 2025</button>
+        <button class="tab-btn" style="font-size:0.9rem; padding: 6px 12px;" onclick="Pacientes.seleccionarTabFiltro('2024', this)">⚠️ Inactivos 2024</button>
+      </div>
+
       <div class="search-bar">
         <input type="text" placeholder="Buscar por nombre..."
                oninput="Pacientes.filtrar(this.value)" id="buscar-paciente">
       </div>
+
       <div class="pacientes-grid" id="pacientes-grid">
         ${Pacientes._lista(DB.pacientes())}
       </div>
@@ -36,15 +49,19 @@ const Pacientes = {
     };
     
     const pacientesOrdenados = [...lista].sort((a, b) => {
-      return obtenerApellido(a.nombre).localeCompare(obtenerApellido(b.nombre), 'es', { sensitivity: 'base' });
+      if (Pacientes.ordenActual === "nombre") {
+        return a.nombre.trim().localeCompare(b.nombre.trim(), 'es', { sensitivity: 'base' });
+      } else {
+        return obtenerApellido(a.nombre).localeCompare(obtenerApellido(b.nombre), 'es', { sensitivity: 'base' });
+      }
     });
 
     let html = "";
     let letraActual = "";
 
     pacientesOrdenados.forEach(p => {
-      const apellido = obtenerApellido(p.nombre);
-      const primeraLetra = Utils.normalizarTexto(apellido.charAt(0)).toUpperCase() || "#";
+      const claveOrden = Pacientes.ordenActual === "nombre" ? p.nombre.trim() : obtenerApellido(p.nombre);
+      const primeraLetra = Utils.normalizarTexto(claveOrden.charAt(0)).toUpperCase() || "#";
       
       if (primeraLetra !== letraActual) {
         letraActual = primeraLetra;
@@ -68,43 +85,81 @@ const Pacientes = {
     return html;
   },
 
-  filtrar: (query) => {
-    const q = Utils.normalizarTexto(query);
-    const filtrados = DB.pacientes().filter(p =>
-      Utils.normalizarTexto(p.nombre).includes(q) || 
-      Utils.normalizarTexto(p.condicion || "").includes(q)
-    );
-    document.getElementById("pacientes-grid").innerHTML = Pacientes._lista(filtrados);
-    const countHeader = document.querySelector(".modulo-header h1");
-    if (countHeader) countHeader.innerHTML = `Pacientes (${filtrados.length})`;
+  filtr: (query) => {
+    Pacientes.aplicarFiltros();
   },
 
-  filtrarInactivos: (diasStr) => {
-    const todos = DB.pacientes();
-    if (!diasStr) {
-      document.getElementById("pacientes-grid").innerHTML = Pacientes._lista(todos);
-      const countHeader = document.querySelector(".modulo-header h1");
-      if (countHeader) countHeader.innerHTML = `Pacientes (Total: ${todos.length})`;
-      return;
+  filtrar: (query) => {
+    Pacientes.aplicarFiltros();
+  },
+
+  seleccionarTabFiltro: (filtro, btn) => {
+    if (btn) {
+      btn.parentElement.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+    }
+    Pacientes.filtroActual = filtro;
+    Pacientes.aplicarFiltros();
+  },
+
+  aplicarFiltros: () => {
+    const query = document.getElementById("buscar-paciente")?.value || "";
+    const q = Utils.normalizarTexto(query);
+    
+    let list = DB.pacientes();
+    
+    // 1. Filtrar por búsqueda de texto
+    if (q) {
+      list = list.filter(p =>
+        Utils.normalizarTexto(p.nombre).includes(q) || 
+        Utils.normalizarTexto(p.condicion || "").includes(q)
+      );
     }
     
-    const dias = parseInt(diasStr);
-    const hoy = new Date();
-    const filtrados = todos.filter(p => {
-      let lastDate = p.creadoEn ? new Date(p.creadoEn + "T12:00:00") : new Date("2020-01-01T12:00:00");
+    // 2. Filtrar por solapa seleccionada (Inactividad / Años)
+    if (Pacientes.filtroActual !== "todos") {
+      const hoy = new Date();
+      const anioFiltro = Pacientes.filtroActual;
       
-      DB.turnos().filter(t => t.pacienteId === p.id).forEach(t => { const d = new Date(t.fecha + "T12:00:00"); if (d > lastDate) lastDate = d; });
-      DB.ventas().filter(v => v.pacienteId === p.id).forEach(v => { const d = new Date(v.fecha + "T12:00:00"); if (d > lastDate) lastDate = d; });
-      if (p.historial) {
-        p.historial.forEach(h => { const d = new Date(h.fecha + "T12:00:00"); if (d > lastDate) lastDate = d; });
+      list = list.filter(p => {
+        const dates = [];
+        
+        // Buscar actividad real
+        DB.turnos().filter(t => t.pacienteId === p.id).forEach(t => dates.push(new Date(t.fecha + "T12:00:00")));
+        DB.ventas().filter(v => v.pacienteId === p.id).forEach(v => dates.push(new Date(v.fecha + "T12:00:00")));
+        if (p.historial) {
+          p.historial.forEach(h => dates.push(new Date(h.fecha + "T12:00:00")));
+        }
+        
+        // Si no tiene ninguna actividad real, caemos al creadoEn
+        if (dates.length === 0) {
+          dates.push(p.creadoEn ? new Date(p.creadoEn + "T12:00:00") : new Date("2020-01-01T12:00:00"));
+        }
+        
+        const lastDate = new Date(Math.max(...dates));
+        const diffDays = (hoy - lastDate) / (1000 * 60 * 60 * 24);
+        
+        // Si el filtro es 2026, pedir al menos 30 días de inactividad
+        if (anioFiltro === "2026") {
+          if (diffDays <= 30) return false;
+        }
+        
+        // Comprobar año del último registro
+        const anioUltimo = lastDate.getFullYear().toString();
+        return anioUltimo === anioFiltro;
+      });
+      
+      const countHeader = document.querySelector(".modulo-header h1");
+      if (countHeader) {
+        let label = anioFiltro === "2026" ? "Inactivos 2026 (>30 días)" : `Inactivos ${anioFiltro}`;
+        countHeader.innerHTML = `${label} (${list.length})`;
       }
-      
-      return ((hoy - lastDate) / (1000 * 60 * 60 * 24)) > dias;
-    });
+    } else {
+      const countHeader = document.querySelector(".modulo-header h1");
+      if (countHeader) countHeader.innerHTML = `Pacientes (Total: ${list.length})`;
+    }
     
-    document.getElementById("pacientes-grid").innerHTML = Pacientes._lista(filtrados);
-    const countHeader = document.querySelector(".modulo-header h1");
-    if (countHeader) countHeader.innerHTML = `Inactivos > ${dias} días (${filtrados.length})`;
+    document.getElementById("pacientes-grid").innerHTML = Pacientes._lista(list);
   },
 
   irAVender: (id) => {
@@ -171,6 +226,8 @@ const Pacientes = {
       <div class="tabs-header" style="margin-top: 25px;">
         <button class="tab-btn active" onclick="Pacientes.switchTab('info', this)">Información General</button>
         <button class="tab-btn" onclick="Pacientes.switchTab('historial', this)">Historial Médico</button>
+        <button class="tab-btn" onclick="Pacientes.switchTab('fotos', this)">Evolución / Fotos</button>
+        <button class="tab-btn" onclick="Pacientes.switchTab('editar', this)">Editar Datos</button>
         <button class="tab-btn" onclick="Pacientes.switchTab('compras', this)">Compras (${ventas.length})</button>
       </div>
 
@@ -221,6 +278,118 @@ const Pacientes = {
         </div>
       </div>
 
+      <!-- TAB EVOLUCION / FOTOS -->
+      <div id="tab-fotos" class="tab-content">
+        <!-- Google Fotos Sync Card -->
+        <div class="card" style="margin-bottom: 25px; border: 1px dashed var(--accent); background: rgba(201, 169, 110, 0.05); padding: 18px; border-radius: var(--radius);">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+            <span style="font-size: 1.4rem;">📸</span>
+            <strong style="font-family: var(--font-display); color: var(--primary); font-size: 0.98rem; letter-spacing: 0.01em;">Sincronizar con Google Fotos (Celular)</strong>
+          </div>
+          ${p.googleFotosUrl 
+            ? `
+              <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 14px; line-height: 1.4;">Este paciente está conectado a su álbum de Google Fotos. Las fotos de tu celular se reflejan aquí abajo al instante.</p>
+              
+              <!-- Formulario en línea para editar enlace -->
+              <div id="gf-editar-form-${p.id}" style="display:none; margin-bottom: 14px;">
+                <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:8px;"><a href="#" onclick="window.open('https://photos.google.com/albums')" style="color:var(--accent); font-weight:600; text-decoration:underline;">Abrir Google Fotos</a> para buscar un nuevo enlace de álbum.</p>
+                <div style="display: flex; gap: 8px;">
+                  <input type="text" id="gf-edit-url-input-${p.id}" value="${p.googleFotosUrl}" placeholder="Pegá el enlace https://photos.app.goo.gl/..." style="flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; outline: none; background: #fff; font-family: inherit;">
+                  <button class="btn-primary" onclick="Pacientes.vincularGoogleFotosEnlinea('${p.id}', true)" style="padding: 8px 14px; font-size: 0.85rem; border-radius: 6px; font-weight: bold;">Guardar</button>
+                  <button class="btn-sm" onclick="document.getElementById('gf-editar-form-${p.id}').style.display='none'; document.getElementById('gf-info-buttons-${p.id}').style.display='flex';" style="padding: 8px 14px; border-radius: 6px; border-color: var(--border); background: var(--bg); color: var(--text);">Cancelar</button>
+                </div>
+              </div>
+              
+              <div id="gf-info-buttons-${p.id}" style="display: flex; gap: 8px;">
+                <button class="btn-primary" onclick="window.open('${p.googleFotosUrl}')" style="background: var(--accent); flex: 1; font-size: 0.85rem; padding: 10px 14px; font-weight: bold; border-radius: 6px;">
+                  🌐 Abrir en el navegador
+                </button>
+                <button class="btn-sm" onclick="document.getElementById('gf-editar-form-${p.id}').style.display='block'; document.getElementById('gf-info-buttons-${p.id}').style.display='none'; setTimeout(() => document.getElementById('gf-edit-url-input-${p.id}').select(), 50);" style="padding: 10px 14px; border-radius: 6px;" title="Editar enlace">
+                  ✏️ Cambiar Enlace
+                </button>
+              </div>
+            `
+            : `
+              <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 14px; line-height: 1.4;">¿Sacás las fotos con tu celular? Creá un álbum compartido en la app Google Fotos de tu celu, pegá el enlace aquí y míralas directamente desde la PC sin cables ni transferencias.</p>
+              
+              <!-- Formulario en línea para vincular enlace -->
+              <div id="gf-vincular-form-${p.id}" style="display:none; margin-bottom: 14px;">
+                <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:8px;">1. <a href="#" onclick="window.open('https://photos.google.com/albums')" style="color:var(--accent); font-weight:600; text-decoration:underline;">Hacé clic acá para abrir Google Fotos</a>, buscá o creá el álbum del paciente, copiá su enlace de compartir.</p>
+                <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:8px;">2. Pegá el enlace abajo y guardalo:</p>
+                <div style="display: flex; gap: 8px;">
+                  <input type="text" id="gf-url-input-${p.id}" placeholder="Pegá el enlace https://photos.app.goo.gl/..." style="flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; outline: none; background: #fff; font-family: inherit;">
+                  <button class="btn-primary" onclick="Pacientes.vincularGoogleFotosEnlinea('${p.id}', false)" style="padding: 8px 14px; font-size: 0.85rem; border-radius: 6px; font-weight: bold;">Guardar</button>
+                  <button class="btn-sm" onclick="document.getElementById('gf-vincular-form-${p.id}').style.display='none'; document.getElementById('gf-vincular-btn-${p.id}').style.display='block';" style="padding: 8px 14px; border-radius: 6px; border-color: var(--border); background: var(--bg); color: var(--text);">Cancelar</button>
+                </div>
+              </div>
+              
+              <button id="gf-vincular-btn-${p.id}" class="btn-primary" onclick="document.getElementById('gf-vincular-form-${p.id}').style.display='block'; this.style.display='none'; setTimeout(() => document.getElementById('gf-url-input-${p.id}').focus(), 50);" style="background: transparent; color: var(--accent); border: 1px solid var(--accent); width: 100%; font-size: 0.85rem; padding: 10px 14px; font-weight: bold; border-radius: 6px;">
+                🔗 Vincular Álbum de Google Fotos
+              </button>
+            `
+          }
+        </div>
+        
+        ${p.googleFotosUrl 
+          ? `
+            <h3 style="margin-bottom: 12px; font-family: var(--font-display); color: var(--primary); font-size: 1.05rem;">Progreso en Google Fotos (En Vivo)</h3>
+            <div style="width: 100%; height: 600px; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); background: #fff; margin-bottom: 25px;">
+              <webview src="${p.googleFotosUrl}" style="width: 100%; height: 100%; border: none;"></webview>
+            </div>
+          `
+          : ""
+        }
+        
+        <h3 style="margin-bottom: 15px; font-family: var(--font-display); color: var(--primary); font-size: 1.05rem;">Galería de Fotos Locales</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 14px;">
+          ${historial.filter(h => h.foto).map(h => `
+            <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); display: flex; flex-direction: column;">
+              <div style="aspect-ratio: 1; overflow: hidden; cursor: pointer;" onclick="window.open('file://${h.foto.replace(/\\/g, '\\\\')}')" title="Ver en tamaño completo">
+                <img src="file://${h.foto}" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.06)';" onmouseout="this.style.transform='none';">
+              </div>
+              <div style="padding: 8px; font-size: 0.72rem; text-align: center; background: var(--bg); border-top: 1px solid var(--border);">
+                <strong style="display: block; color: var(--primary);">${Utils.formatFecha(h.fecha)}</strong>
+                <span style="color: var(--text-muted); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px;">${h.tratamiento}</span>
+              </div>
+            </div>
+          `).join("") || '<p class="empty-state" style="grid-column: 1 / -1; padding: 30px 0;">No hay fotos locales registradas en el historial.</p>'}
+        </div>
+      </div>
+
+      <!-- TAB EDITAR -->
+      <div id="tab-editar" class="tab-content">
+        <h3 style="margin-bottom: 15px; font-family: var(--font-display); color: var(--primary); font-size: 1.05rem;">Editar Datos del Paciente</h3>
+        <div class="form-group">
+          <label>Nombre completo *</label>
+          <input type="text" id="edit-p-nombre" value="${p.nombre}">
+        </div>
+        <div class="form-group">
+          <label>Teléfono</label>
+          <input type="text" id="edit-p-tel" value="${p.telefono !== "—" ? (p.telefono || "") : ""}">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="edit-p-email" value="${p.email || ""}">
+        </div>
+        <div class="form-group">
+          <label>Condición capilar</label>
+          <input type="text" id="edit-p-condicion" value="${p.condicion || ""}">
+        </div>
+        <div class="form-group">
+          <label>Fecha de nacimiento</label>
+          <input type="date" id="edit-p-nacimiento" value="${p.fechaNacimiento || ""}">
+        </div>
+        <div class="form-group">
+          <label>Enlace Álbum Google Fotos</label>
+          <input type="text" id="edit-p-fotos-url" value="${p.googleFotosUrl || ""}" placeholder="https://photos.app.goo.gl/...">
+        </div>
+        <div class="form-group">
+          <label>Notas</label>
+          <textarea id="edit-p-notas" rows="12" placeholder="Observaciones clínicas, antecedentes..." style="min-height: 250px; line-height: 1.5; font-size: 0.92rem; font-family: inherit;">${p.notas || ""}</textarea>
+        </div>
+        <button class="btn-primary" onclick="Pacientes.guardarEdicion('${p.id}')" style="width: 100%; font-weight: bold; margin-top: 10px;">Guardar Cambios</button>
+      </div>
+
       <!-- TAB COMPRAS -->
       <div id="tab-compras" class="tab-content">
         ${ventas.map(v => {
@@ -232,7 +401,7 @@ const Pacientes = {
           </div>`;
         }).join("") || '<p class="empty-state">Sin compras registradas.</p>'}
       </div>
-    `, { bloquearFondo: true }));
+    `, { bloquearFondo: true, grande: true }));
   },
 
   switchTab: (tabId, btn) => {
@@ -419,6 +588,27 @@ const Pacientes = {
     }
   },
 
+  vincularGoogleFotosEnlinea: (pacienteId, esEdicion = false) => {
+    const inputId = esEdicion ? `gf-edit-url-input-${pacienteId}` : `gf-url-input-${pacienteId}`;
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const url = input.value.trim();
+    
+    if (url && !url.startsWith("http://") && !url.startsWith("https://")) {
+      return Utils.mostrarToast("Por favor, ingresá una URL válida (ej. https://photos.app.goo.gl/...)");
+    }
+    
+    DB.actualizar("pacientes", pacienteId, { googleFotosUrl: url });
+    Utils.mostrarToast(url ? "Álbum de Google Fotos vinculado" : "Álbum desvinculado");
+    Pacientes.verDetalle(pacienteId);
+    
+    // Volver a abrir la pestaña de fotos tras recargar el modal
+    setTimeout(() => {
+      const btn = document.querySelectorAll('.tab-btn')[2];
+      if (btn) Pacientes.switchTab('fotos', btn);
+    }, 10);
+  },
+
   abrirNuevo: () => {
     Modal.abrir(Modal.wrap(`
       <h2>Nuevo paciente</h2>
@@ -441,6 +631,8 @@ const Pacientes = {
         </select>
         <input type="text" id="np-origen-detalle" placeholder="Nombre del paciente..." style="display:none; margin-top:8px;">
       </div>
+      <div class="form-group"><label>Enlace Álbum Google Fotos (Opcional)</label>
+        <input type="text" id="np-fotos-url" placeholder="https://photos.app.goo.gl/..."></div>
       <div class="form-group"><label>Notas</label>
         <textarea id="np-notas" placeholder="Alergias, observaciones..."></textarea></div>
       <button class="btn-primary" onclick="Pacientes.guardar()">Guardar paciente</button>
@@ -463,6 +655,7 @@ const Pacientes = {
       condicion: document.getElementById("np-condicion").value,
       fechaNacimiento: document.getElementById("np-nacimiento").value,
       origen:   origen,
+      googleFotosUrl: document.getElementById("np-fotos-url").value.trim(),
       notas:    document.getElementById("np-notas").value,
       creadoEn: Utils.hoy()
     };
@@ -471,6 +664,41 @@ const Pacientes = {
     lista.push(nuevo);
     DB.set("pacientes", lista);
     Modal.cerrar();
+    Router.recargar();
+  },
+
+  cambiarOrden: (valor) => {
+    Pacientes.ordenActual = valor;
+    localStorage.setItem('pacientes_orden', valor);
+    Pacientes.aplicarFiltros();
+  },
+
+  guardarEdicion: (pacienteId) => {
+    const nombre = document.getElementById("edit-p-nombre").value.trim();
+    if (!nombre) return Utils.mostrarToast("El nombre es obligatorio.");
+    
+    const cambios = {
+      nombre,
+      telefono: document.getElementById("edit-p-tel").value.trim() || "—",
+      email: document.getElementById("edit-p-email").value.trim(),
+      condicion: document.getElementById("edit-p-condicion").value.trim(),
+      fechaNacimiento: document.getElementById("edit-p-nacimiento").value,
+      googleFotosUrl: document.getElementById("edit-p-fotos-url").value.trim(),
+      notas: document.getElementById("edit-p-notas").value.trim()
+    };
+    
+    DB.actualizar("pacientes", pacienteId, cambios);
+    Utils.mostrarToast("Datos del paciente actualizados");
+    
+    // Re-abrir modal
+    Pacientes.verDetalle(pacienteId);
+    
+    // Mantener pestaña activa
+    setTimeout(() => {
+      const btn = document.querySelectorAll('.tab-btn')[3];
+      if (btn) Pacientes.switchTab('editar', btn);
+    }, 15);
+    
     Router.recargar();
   }
 };

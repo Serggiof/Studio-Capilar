@@ -139,6 +139,38 @@ const Configuracion = {
           </div>
         </section>
 
+        <!-- Copias de Seguridad (Backup) -->
+        <section class="card">
+          <h2>💾 Copias de seguridad (Backup)</h2>
+          <p class="config-desc">Exportá todos los pacientes, turnos e historias clínicas a un archivo, o importalos desde una copia de seguridad.</p>
+          
+          <div style="margin-top: 15px; display: flex; flex-direction: column; gap: 14px;">
+            <div>
+              <button class="btn-primary" onclick="Configuracion.exportarBackup()" style="width: 100%;">
+                📥 Exportar Copia de Seguridad (.json)
+              </button>
+            </div>
+            
+            <div style="border-top: 1px solid var(--border); padding-top: 14px;">
+              <label style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.04em;">
+                Importar desde archivo JSON
+              </label>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <input type="file" id="cfg-backup-file" accept=".json" style="font-size: 0.82rem; flex: 1;">
+                <button class="btn-primary" onclick="Configuracion.importarBackup()" style="padding: 10px 14px; font-size: 0.85rem; font-weight: bold; border-radius: 6px;">
+                  📤 Importar
+                </button>
+              </div>
+              <p class="config-nota" id="cfg-backup-ok" style="display:none; margin-top: 8px;">
+                ✅ Datos importados correctamente. Cargando...
+              </p>
+              <p class="config-nota" id="cfg-backup-err" style="display:none; margin-top: 8px; color: var(--alerta);">
+                ❌ Error al importar: Archivo inválido.
+              </p>
+            </div>
+          </div>
+        </section>
+
         <!-- Peligro -->
         <section class="card config-danger">
           <h2>⚠ Zona de riesgo</h2>
@@ -239,6 +271,77 @@ const Configuracion = {
     if (!el) return;
     el.style.display = "block";
     setTimeout(() => el.style.display = "none", 2500);
+  },
+
+  exportarBackup: () => {
+    const data = {
+      pacientes:      DB.get("pacientes"),
+      turnos:         DB.get("turnos"),
+      productos:      DB.get("productos"),
+      ventas:         DB.get("ventas"),
+      sesionesPlasma: DB.get("sesionesPlasma"),
+      sesionesMeso:   DB.get("sesionesMeso"),
+      appConfig:      JSON.parse(localStorage.getItem("appConfig")) || {}
+    };
+    
+    const jsonStr = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonStr], { type: "application/json;charset=utf-8" });
+    const fechaStr = new Date().toISOString().split('T')[0];
+    saveAs(blob, `backup_capilar_${fechaStr}.json`);
+    Utils.mostrarToast("Copia de seguridad exportada correctamente");
+  },
+
+  importarBackup: () => {
+    const fileInput = document.getElementById("cfg-backup-file");
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+      return Utils.mostrarToast("Por favor, seleccioná un archivo JSON primero.");
+    }
+    
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        
+        // Validación de estructura para evitar romper la app
+        if (!data.pacientes || !Array.isArray(data.pacientes)) {
+          throw new Error("El archivo no contiene un formato de backup de pacientes válido.");
+        }
+        
+        // Cargar colecciones de datos si vienen en el JSON
+        if (data.pacientes)      DB.set("pacientes", data.pacientes);
+        if (data.turnos)         DB.set("turnos", data.turnos);
+        if (data.productos)      DB.set("productos", data.productos);
+        if (data.ventas)         DB.set("ventas", data.ventas);
+        if (data.sesionesPlasma) DB.set("sesionesPlasma", data.sesionesPlasma);
+        if (data.sesionesMeso)   DB.set("sesionesMeso", data.sesionesMeso);
+        
+        if (data.appConfig && Object.keys(data.appConfig).length > 0) {
+          localStorage.setItem("appConfig", JSON.stringify(data.appConfig));
+        }
+        
+        const okMsg = document.getElementById("cfg-backup-ok");
+        if (okMsg) okMsg.style.display = "block";
+        Utils.mostrarToast("¡Copia de seguridad restaurada!");
+        
+        // Recargar la aplicación tras una breve demora
+        setTimeout(() => {
+          Router.ir("dashboard");
+          window.location.reload();
+        }, 1500);
+        
+      } catch (err) {
+        console.error(err);
+        const errMsg = document.getElementById("cfg-backup-err");
+        if (errMsg) {
+          errMsg.textContent = `❌ Error al importar: ${err.message || 'Archivo inválido.'}`;
+          errMsg.style.display = "block";
+          setTimeout(() => errMsg.style.display = "none", 5000);
+        }
+        Utils.mostrarToast("Error al importar el archivo de respaldo.");
+      }
+    };
+    reader.readAsText(file);
   },
 
   resetearDatos: () => {

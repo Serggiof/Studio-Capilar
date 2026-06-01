@@ -36,9 +36,25 @@ const Router = {
 
   actualizarBadge: () => {
     let count = 0;
-    DB.ventas().forEach(v => { if (!v.contactado && Utils.esAlerta(v.proximaRecompra, 7)) count++; });
-    DB.sesionesPlasma().forEach(s => { if (!s.contactado && Utils.esAlerta(s.proximaAlerta, 5)) count++; });
-    DB.sesionesMeso().forEach(s => { if (!s.contactado && Utils.esAlerta(s.proximaAlerta, 5)) count++; });
+    const anioActual = "2026";
+    DB.ventas().forEach(v => {
+      if (!v.contactado && Utils.esAlerta(v.proximaRecompra, 7)) {
+        const y = new Date(v.proximaRecompra + "T12:00:00").getFullYear().toString();
+        if (y === anioActual) count++;
+      }
+    });
+    DB.sesionesPlasma().forEach(s => {
+      if (!s.contactado && Utils.esAlerta(s.proximaAlerta, 5)) {
+        const y = new Date(s.proximaAlerta + "T12:00:00").getFullYear().toString();
+        if (y === anioActual) count++;
+      }
+    });
+    DB.sesionesMeso().forEach(s => {
+      if (!s.contactado && Utils.esAlerta(s.proximaAlerta, 5)) {
+        const y = new Date(s.proximaAlerta + "T12:00:00").getFullYear().toString();
+        if (y === anioActual) count++;
+      }
+    });
     const badge = document.getElementById("badge-alertas");
     if (badge) { badge.textContent = count; badge.style.display = count > 0 ? "flex" : "none"; }
   }
@@ -65,7 +81,7 @@ const Modal = {
   // Shortcut para armar el wrapper del modal
   wrap: (contenido, opciones = {}) => `
     <div class="modal-overlay" ${opciones.bloquearFondo ? '' : 'onclick="Modal.cerrar(event)"'}>
-      <div class="modal">
+      <div class="modal ${opciones.grande ? 'modal-lg' : ''}">
         <button class="modal-close" onclick="Modal.cerrar()">✕</button>
         ${contenido}
       </div>

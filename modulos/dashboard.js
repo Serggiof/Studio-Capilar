@@ -4,13 +4,15 @@
 
 const Dashboard = {
   render: (el) => {
-    const hoy = Utils.hoy();
+const Hoy = Utils.hoy();
     const turnosHoy = DB.turnos()
-      .filter(t => t.fecha === hoy)
+      .filter(t => t.fecha === Hoy)
       .sort((a, b) => a.hora.localeCompare(b.hora));
 
-    const alertasRecompra = DB.ventas().filter(v => Utils.esAlerta(v.proximaRecompra, 7));
-    const alertasPlasma   = DB.sesionesPlasma().filter(s => Utils.esAlerta(s.proximaAlerta, 5));
+    const alertasRecompra = DB.ventas().filter(v => !v.contactado && Utils.esAlerta(v.proximaRecompra, 7));
+    const alertasPlasma   = DB.sesionesPlasma().filter(s => !s.contactado && Utils.esAlerta(s.proximaAlerta, 5));
+    const alertasMeso     = DB.sesionesMeso().filter(s => !s.contactado && Utils.esAlerta(s.proximaAlerta, 5));
+    const totalAlertas = alertasRecompra.length + alertasPlasma.length + alertasMeso.length;
 
     el.innerHTML = `
       <div class="dash-header">
@@ -31,8 +33,8 @@ const Dashboard = {
             <span class="stat-num">${DB.pacientes().length}</span>
             <span class="stat-label">Pacientes</span>
           </div>
-          <div class="stat-card ${alertasRecompra.length + alertasPlasma.length > 0 ? "stat-alerta" : ""}" onclick="Router.ir('alertas')" style="cursor: pointer;">
-            <span class="stat-num">${alertasRecompra.length + alertasPlasma.length}</span>
+          <div class="stat-card ${totalAlertas > 0 ? "stat-alerta" : ""}" onclick="Router.ir('alertas')" style="cursor: pointer;">
+            <span class="stat-num">${totalAlertas}</span>
             <span class="stat-label">Alertas</span>
           </div>
         </div>
@@ -46,7 +48,7 @@ const Dashboard = {
         <div class="dash-side">
           <section class="card">
             <h2>Alertas activas</h2>
-            ${Dashboard._alertas(alertasRecompra, alertasPlasma)}
+            ${Dashboard._alertas(alertasRecompra, alertasPlasma, alertasMeso)}
           </section>
         </div>
       </div>
@@ -70,8 +72,8 @@ const Dashboard = {
     }).join("");
   },
 
-  _alertas: (recompra, plasma) => {
-    if (recompra.length === 0 && plasma.length === 0)
+  _alertas: (recompra, plasma, meso) => {
+    if (recompra.length === 0 && plasma.length === 0 && meso.length === 0)
       return '<p class="empty-state">Sin alertas pendientes ✅</p>';
 
     return [
@@ -96,6 +98,18 @@ const Dashboard = {
           <div>
             <strong>${p?.nombre}</strong>
             <span>Próxima sesión plasma</span>
+            <small>${dias <= 0 ? "Venció" : `En ${dias} días`}</small>
+          </div>
+        </div>`;
+      }),
+      ...meso.map(s => {
+        const p   = DB.getPaciente(s.pacienteId);
+        const dias = Utils.diasHasta(s.proximaAlerta);
+        return `<div class="alerta-item ${dias <= 0 ? "alerta-vencida" : ""}">
+          <span class="alerta-ico">💉</span>
+          <div>
+            <strong>${p?.nombre}</strong>
+            <span>Próxima sesión mesoterapia</span>
             <small>${dias <= 0 ? "Venció" : `En ${dias} días`}</small>
           </div>
         </div>`;

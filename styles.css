@@ -643,6 +643,20 @@ nav {
   animation: modalIn 0.22s ease;
 }
 
+.modal.modal-lg {
+  max-width: 980px;
+  width: 95%;
+  max-height: 92vh;
+  padding: 36px 42px;
+}
+
+@media (max-width: 1024px) {
+  .modal.modal-lg {
+    max-width: 90%;
+    padding: 28px;
+  }
+}
+
 @keyframes modalIn {
   from { transform: scale(0.95) translateY(8px); opacity: 0; }
   to   { transform: scale(1) translateY(0); opacity: 1; }
@@ -726,7 +740,12 @@ nav {
   border-radius: 8px;
 }
 
-.modal-notas p { font-size: 0.88rem; margin-top: 4px; }
+.modal-notas p {
+  font-size: 0.88rem;
+  margin-top: 4px;
+  white-space: pre-wrap;
+  line-height: 1.4;
+}
 
 .modal-section {
   margin-top: 20px;
